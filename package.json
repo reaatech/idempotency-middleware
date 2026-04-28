@@ -119,7 +119,7 @@
     "koa": "^2.15.0",
     "koa-bodyparser": "^4.4.1",
     "prettier": "^3.2.0",
-    "supertest": "^6.3.0",
+    "supertest": "^7.2.2",
     "tsup": "^8.0.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
