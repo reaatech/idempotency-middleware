@@ -1,13 +1,36 @@
-# Architecture: Idempotency Middleware
+# Architecture: Idempotency Middleware (Monorepo)
 
 ## System Overview
 
-The idempotency middleware is designed as a modular, framework-agnostic system that prevents duplicate execution of operations when clients retry requests. The architecture addresses four critical challenges:
+The idempotency middleware is a **pnpm monorepo** of 6 publishable packages designed as a modular, framework-agnostic system that prevents duplicate execution of operations when clients retry requests. The architecture addresses four critical challenges:
 
 1. **Concurrent Duplicate Requests** - Multiple identical requests arriving simultaneously
 2. **Partial Failures** - Execution starts but crashes before completion
 3. **TTL Management** - Automatic expiration of cached responses
 4. **Storage Flexibility** - Support for multiple backend storage systems
+
+### Package Map
+
+| Package | Name | Role |
+|---|---|---|
+| `packages/core` | `@reaatech/idempotency-middleware` | Core middleware, types, MemoryAdapter, StorageAdapter interface, utilities, raw handler |
+| `packages/adapter-redis` | `@reaatech/idempotency-middleware-adapter-redis` | Redis storage adapter |
+| `packages/adapter-dynamodb` | `@reaatech/idempotency-middleware-adapter-dynamodb` | DynamoDB storage adapter |
+| `packages/adapter-firestore` | `@reaatech/idempotency-middleware-adapter-firestore` | Firestore storage adapter |
+| `packages/express` | `@reaatech/idempotency-middleware-express` | Express middleware |
+| `packages/koa` | `@reaatech/idempotency-middleware-koa` | Koa middleware |
+
+### Toolchain
+
+| Concern | Tool |
+|---|---|
+| Package manager | pnpm 10 (workspaces) |
+| Build orchestration | Turborepo 2 |
+| Bundler | tsup 8 (per-package) |
+| Lint & Format | Biome 1.9 |
+| Testing | Vitest 3 (co-located `*.test.ts` per package) |
+| Type checking | `tsc --noEmit -p tsconfig.typecheck.json` |
+| Versioning | Changesets |
 
 ---
 
@@ -1003,18 +1026,24 @@ const config = {
 enum IdempotencyErrorCode {
   // Missing idempotency key
   KEY_REQUIRED = 'KEY_REQUIRED',
-  
+
   // Lock acquisition timeout
   LOCK_TIMEOUT = 'LOCK_TIMEOUT',
-  
+
   // Storage operation failed
   STORAGE_ERROR = 'STORAGE_ERROR',
-  
+
   // Response serialization failed
   SERIALIZATION_ERROR = 'SERIALIZATION_ERROR',
-  
-  // Conflict with existing lock
-  CONFLICT = 'CONFLICT'
+
+  // Conflict with existing operation
+  CONFLICT = 'CONFLICT',
+
+  // Invalid configuration
+  INVALID_CONFIG = 'INVALID_CONFIG',
+
+  // Storage adapter not connected
+  NOT_CONNECTED = 'NOT_CONNECTED',
 }
 ```
 
@@ -1025,10 +1054,27 @@ class IdempotencyError extends Error {
   constructor(
     public code: IdempotencyErrorCode,
     message: string,
+    public context?: Record<string, unknown>,
     public cause?: Error
   ) {
     super(message);
     this.name = 'IdempotencyError';
+  }
+
+  isRecoverable(): boolean {
+    return [IdempotencyErrorCode.LOCK_TIMEOUT, IdempotencyErrorCode.STORAGE_ERROR]
+      .includes(this.code);
+  }
+
+  getStatusCode(): number {
+    switch (this.code) {
+      case IdempotencyErrorCode.KEY_REQUIRED: return 400;
+      case IdempotencyErrorCode.LOCK_TIMEOUT: return 409;
+      case IdempotencyErrorCode.CONFLICT: return 409;
+      case IdempotencyErrorCode.STORAGE_ERROR: return 503;
+      case IdempotencyErrorCode.SERIALIZATION_ERROR: return 500;
+      default: return 500;
+    }
   }
 }
 
@@ -1239,6 +1285,20 @@ const logger = {
 
 ## Testing Strategy
 
+### Organization
+
+Tests are **co-located** with source files in each package's `src/` directory:
+
+```
+packages/core/src/
+├── middleware.ts          → middleware.test.ts
+├── errors.ts             → errors.test.ts
+├── MemoryAdapter.ts      → MemoryAdapter.test.ts
+└── ...
+```
+
+Each package runs its own test suite via Vitest, orchestrated by Turborepo (`turbo run test`). Coverage thresholds are enforced per-package: lines 90%, branches 85%, functions 90%, statements 90%.
+
 ### Unit Tests
 
 ```typescript
@@ -1365,15 +1425,16 @@ describe('Express Middleware E2E', () => {
 
 This architecture provides a robust, scalable solution for idempotency in distributed systems. Key strengths:
 
-1. **Modular Design** - Easy to extend with new adapters
-2. **Battle-Tested Pattern** - Proven approach used in production
-3. **Framework Agnostic** - Works with any Node.js framework
-4. **Production Ready** - Handles edge cases and failures
-5. **Type Safe** - Full TypeScript support
-6. **Well Documented** - Comprehensive examples and guides
+1. **Modular Design** - Easy to extend with new adapters and frameworks
+2. **Monorepo Structure** - 6 publishable packages with clear boundaries and zero-circular dependencies
+3. **Battle-Tested Pattern** - Proven approach used in production (Stripe, Adyen, PayPal)
+4. **Framework Agnostic** - Works with Express, Koa, Lambda, queue consumers, gRPC
+5. **Production Ready** - Handles edge cases and failures via distributed locking
+6. **Type Safe** - Full TypeScript strict mode with verbatimModuleSyntax
+7. **Well Documented** - Per-package READMEs, architecture docs, examples
 
 The implementation addresses all four critical challenges:
-- ✅ Concurrent duplicate requests (distributed locks)
-- ✅ Partial failures (automatic cleanup)
-- ✅ TTL management (adapter-specific implementations)
-- ✅ Storage flexibility (4 production-ready adapters)
+- ✅ Concurrent duplicate requests (distributed locks bundled with storage)
+- ✅ Partial failures (automatic lock TTL expiry + double-check pattern)
+- ✅ TTL management (adapter-specific implementations with unified interface)
+- ✅ Storage flexibility (4 production-ready adapters in separate packages)

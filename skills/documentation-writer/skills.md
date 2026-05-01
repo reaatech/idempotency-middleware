@@ -40,8 +40,8 @@ Creating comprehensive documentation, API references, examples, and guides for t
 ### Code Tools
 - **TypeScript** - For type-safe examples
 - **tsx** - For running TypeScript examples
-- **Prettier** - Code formatting
-- **ESLint** - Code quality
+- **Biome** - Code formatting and linting
+- **pnpm workspaces** - Monorepo references in examples
 
 ## Constraints
 

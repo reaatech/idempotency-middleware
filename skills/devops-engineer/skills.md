@@ -32,21 +32,20 @@ CI/CD pipeline setup, build configuration, package publishing, and infrastructur
 ## Tools
 
 ### Build Tools
-- **tsup** - Fast TypeScript bundler
-- **TypeScript** - Language compiler
-- **ESLint** - Code linting
-- **Prettier** - Code formatting
+- **tsup 8** - Fast TypeScript bundler (per-package: `tsup src/index.ts --format cjs,esm --dts --clean`)
+- **TypeScript 5.8** - Language compiler with strict mode
+- **Biome 1.9** - Code linting and formatting
+- **Turborepo 2** - Monorepo build orchestration (`turbo run build`)
 
 ### CI/CD Tools
 - **GitHub Actions** - CI/CD automation
-- **pnpm** - Package manager
-- **npm** - Package publishing
-- **Codecov** - Coverage reporting
+- **pnpm 10** - Package manager with workspaces
+- **Changesets** - Versioning and CHANGELOG generation
+- **npm** - Package publishing (with provenance)
 
 ### Infrastructure Tools
-- **Docker** - Containerization
-- **Testcontainers** - Integration testing
-- **Node.js** - Runtime environment
+- **Node.js 18+** - Runtime environment
+- **pnpm workspaces** - Monorepo dependency linking
 
 ## Constraints
 
@@ -90,41 +89,30 @@ CI/CD pipeline setup, build configuration, package publishing, and infrastructur
 
 ## Examples
 
-### Example 1: tsup Configuration
+### Example 1: Monorepo Build Configuration
 
-```typescript
-// tsup.config.ts
-import { defineConfig } from 'tsup';
+```bash
+# Each package uses the same build command:
+# packages/*/package.json → "build": "tsup src/index.ts --format cjs,esm --dts --clean"
 
-export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['cjs', 'esm'],
-  dts: true,
-  splitting: false,
-  sourcemap: true,
-  clean: true,
-  minify: true,
-  target: 'node18',
-  external: [
-    'express',
-    'koa',
-    'ioredis',
-    '@google-cloud/firestore',
-    '@aws-sdk/client-dynamodb',
-    '@aws-sdk/lib-dynamodb',
-  ],
-  esbuildOptions(options) {
-    options.banner = {
-      js: '"use strict";',
-    };
-  },
-  outDir: 'dist',
-  outExtension({ format }) {
-    return {
-      js: format === 'esm' ? '.mjs' : '.js',
-    };
-  },
-});
+# Root turbo.json orchestrates:
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    }
+  }
+}
+
+# Build all packages in dependency order:
+pnpm run build   # → turbo run build
+```
+
+Each package produces:
+- `dist/index.js` (ESM)
+- `dist/index.cjs` (CJS)
+- `dist/index.d.ts` / `dist/index.d.cts` (TypeScript declarations)
 ```
 
 ### Example 2: GitHub Actions CI Workflow
@@ -139,287 +127,187 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  NODE_VERSION: 22
+
 jobs:
-  lint:
-    name: Lint
+  install:
+    name: Install Dependencies
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          version: 8
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  format:
+    name: Code Format
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }}, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm biome format --write . && git diff --exit-code
 
-      - name: Run ESLint
-        run: pnpm run lint
+  lint:
+    name: Lint
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }}, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm lint
 
   typecheck:
     name: Type Check
+    needs: install
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run TypeScript compiler
-        run: pnpm run typecheck
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        run: pnpm run test
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          directory: ./coverage
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }}, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm typecheck
 
   build:
     name: Build
+    needs: [lint, typecheck]
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: ${{ env.NODE_VERSION }}, cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm build
 ```
 
-### Example 3: GitHub Actions Publish Workflow
+### Example 3: GitHub Actions Release Workflow (Changesets)
 
 ```yaml
-# .github/workflows/publish.yml
-name: Publish
+# .github/workflows/release.yml
+name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22
 
 jobs:
-  publish:
-    name: Publish to npm
+  release:
+    name: Release
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      pull-requests: write
       id-token: write
+      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
         with:
-          version: 8
+          fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
 
-      - name: Build
-        run: pnpm run build
-
-      - name: Run tests
-        run: pnpm run test
-
-      - name: Publish to npm
-        run: pnpm publish --access public --no-git-checks
+      - id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm release
+          version: pnpm version-packages
+          commit: 'chore(release): version packages'
+          title: 'chore(release): version packages'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
 ```
 
-### Example 4: package.json Configuration
+### Example 4: Per-Package package.json (Monorepo)
 
 ```json
 {
-  "name": "@reaatech/idempotency-middleware",
+  "name": "@reaatech/idempotency-middleware-adapter-redis",
   "version": "1.0.0",
-  "description": "Framework-agnostic idempotency cache middleware for TypeScript applications",
-  "author": "ReaTech <info@reatech.io>",
+  "description": "Redis storage adapter for @reaatech/idempotency-middleware",
   "license": "MIT",
-  "homepage": "https://github.com/reaatech/idempotency-middleware#readme",
+  "author": "Rick Somers <rick@reaatech.com> (https://reaatech.com)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reaatech/idempotency-middleware.git"
+    "url": "https://github.com/reaatech/idempotency-middleware.git",
+    "directory": "packages/adapter-redis"
   },
+  "homepage": "https://github.com/reaatech/idempotency-middleware/tree/main/packages/adapter-redis#readme",
   "bugs": {
     "url": "https://github.com/reaatech/idempotency-middleware/issues"
   },
-  "keywords": [
-    "idempotency",
-    "middleware",
-    "cache",
-    "express",
-    "koa",
-    "typescript",
-    "redis",
-    "firestore",
-    "dynamodb"
-  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
-    },
-    "./express": {
-      "import": {
-        "types": "./dist/express.d.ts",
-        "default": "./dist/express.js"
-      },
-      "require": {
-        "types": "./dist/express.d.cts",
-        "default": "./dist/express.cjs"
-      }
-    },
-    "./koa": {
-      "import": {
-        "types": "./dist/koa.d.ts",
-        "default": "./dist/koa.js"
-      },
-      "require": {
-        "types": "./dist/koa.d.cts",
-        "default": "./dist/koa.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test": "vitest run",
-    "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write src/",
-    "prepublishOnly": "pnpm run build && pnpm run test"
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@reaatech/idempotency-middleware": "workspace:*",
+    "ioredis": "^5.3.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.57.0",
-    "express": "^4.18.2",
-    "koa": "^2.15.0",
-    "prettier": "^3.2.0",
+    "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.3.0",
-    "@vitest/coverage-v8": "^1.3.0"
-  },
-  "peerDependencies": {
-    "express": "^4.18.0",
-    "koa": "^2.14.0",
-    "ioredis": "^5.3.0",
-    "@google-cloud/firestore": "^7.0.0",
-    "@aws-sdk/client-dynamodb": "^3.50.0",
-    "@aws-sdk/lib-dynamodb": "^3.50.0"
-  },
-  "peerDependenciesMeta": {
-    "express": { "optional": true },
-    "koa": { "optional": true },
-    "ioredis": { "optional": true },
-    "@google-cloud/firestore": { "optional": true },
-    "@aws-sdk/client-dynamodb": { "optional": true },
-    "@aws-sdk/lib-dynamodb": { "optional": true }
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
   },
   "engines": {
     "node": ">=18"
   }
 }
 ```
+
+Key monorepo patterns:
+- `"directory"` in `repository` tells npm the subdirectory
+- `"workspace:*"` for cross-package dependencies
+- `"publishConfig": { "access": "public" }` required for scoped packages
+- Build/Test commands are per-package; Turborepo orchestrates
+- `types` comes first in exports (required by Node.js/TypeScript resolution order)
 
 ## Workflow Integration
 

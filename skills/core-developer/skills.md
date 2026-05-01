@@ -32,13 +32,14 @@ TypeScript implementation and core logic development for the idempotency middlew
 ## Tools
 
 ### Development Tools
-- **TypeScript 5.x** - Latest TypeScript features
-- **tsup** - Fast build tool for TypeScript
+- **TypeScript 5.x** - Latest TypeScript features with strict mode
+- **tsup** - Fast build tool for TypeScript (per-package)
 - **tsx** - TypeScript executor for development
-- **ESLint** - Code quality and consistency
+- **Biome** - Code quality, formatting, and linting
+- **pnpm workspaces** - Monorepo dependency management
 
 ### Testing Tools
-- **Vitest** - Fast unit test framework
+- **Vitest** - Fast unit test framework (co-located `*.test.ts`)
 - **@vitest/coverage-v8** - Code coverage analysis
 - **Mock implementations** - For testing in isolation
 
@@ -468,11 +469,12 @@ export interface ExecutionContext {
 4. Create implementation plan
 
 ### Implementation Phase
-1. Set up TypeScript project structure
-2. Implement core types and interfaces
-3. Build middleware logic incrementally
-4. Add comprehensive error handling
-5. Optimize for performance
+1. Implement in `packages/core/src/`
+2. Set up cross-package imports via workspace names
+3. Build core types and interfaces
+4. Implement middleware logic incrementally
+5. Add comprehensive error handling
+6. Optimize for performance
 
 ### Testing Phase
 1. Write unit tests for each component

@@ -1,254 +1,234 @@
-# @reaatech/idempotency-middleware
+# idempotency-middleware
 
-[![npm version](https://img.shields.io/npm/v/%40reaatech%2Fidempotency-middleware)](https://www.npmjs.com/package/@reaatech/idempotency-middleware)
-[![license](https://img.shields.io/npm/l/%40reaatech%2Fidempotency-middleware)](./LICENSE)
-[![node](https://img.shields.io/node/v/%40reaatech%2Fidempotency-middleware)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%23007ACC)](https://www.typescriptlang.org/)
+[![CI](https://github.com/reaatech/idempotency-middleware/actions/workflows/ci.yml/badge.svg)](https://github.com/reaatech/idempotency-middleware/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
 
-Framework-agnostic idempotency middleware for TypeScript and Node.js. Makes `POST`, `PUT`, and `PATCH` requests safe to retry by caching responses keyed by the `Idempotency-Key` header so that repeated requests produce the same result without re-executing side effects.
+> Framework-agnostic idempotency middleware for TypeScript. Make `POST`, `PUT`, and `PATCH` requests safe to retry — duplicate requests with the same `Idempotency-Key` header return the cached original response without re-executing side effects.
 
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-  - [Express](#express)
-  - [Koa](#koa)
-  - [Raw Handler (any framework)](#raw-handler-any-framework)
-- [Storage Adapters](#storage-adapters)
-- [Configuration](#configuration)
-- [Error Handling](#error-handling)
-- [How It Works](#how-it-works)
-- [Compatibility](#compatibility)
-- [License](#license)
+This monorepo provides a core middleware library, storage adapters for Redis/DynamoDB/Firestore, and framework integrations for Express and Koa.
 
 ## Features
 
-- **Pluggable storage** — in-memory (default), Redis, DynamoDB, and Firestore adapters, all implementing a common interface.
-- **Framework adapters** — first-class Express and Koa middleware, plus a generic `idempotentHandler` wrapper that works with any runtime (Lambda functions, queue consumers, gRPC services, etc.).
-- **Distributed locking** — when concurrent requests share the same idempotency key, only the first executes the handler. All others wait and receive the same cached response.
-- **True idempotency** — both successes and errors are cached. A failed mutation (e.g. insufficient funds) returns the original error on retry instead of re-executing.
-- **Zero-config core** — the `MemoryAdapter` requires no external dependencies and works immediately after `await adapter.connect()`.
-- **Strict TypeScript** — full type definitions with no `any`, targeting ES2022, requires Node.js 18+.
+- **Pluggable storage** — in-memory (default), Redis, DynamoDB, and Firestore backends behind a single `StorageAdapter` interface
+- **Distributed locking** — bundled lock primitives prevent concurrent handler execution for the same idempotency key across all storage backends
+- **True idempotency** — both successes and errors are cached; a failed mutation returns the original error on retry
+- **Framework adapters** — first-class Express and Koa middleware, plus a generic `idempotentHandler` for Lambda, queue consumers, and gRPC
+- **Body-aware cache keys** — SHA-256 body hashes differentiate requests with the same key but different payloads
+- **Vary header support** — include select request headers in cache keys for content negotiation
+- **Zero-config core** — `MemoryAdapter` requires no dependencies and works immediately after `connect()`
+- **Dual ESM/CJS output** — works with `import` and `require`, targets Node.js 18+
 
 ## Installation
 
+### Using the packages
+
+Packages are published under the `@reaatech` scope and can be installed individually:
+
 ```bash
+# Core middleware (zero-dependency)
 npm install @reaatech/idempotency-middleware
+
+# Express middleware
+npm install @reaatech/idempotency-middleware-express
+
+# Koa middleware
+npm install @reaatech/idempotency-middleware-koa
+
+# Storage adapters
+npm install @reaatech/idempotency-middleware-adapter-redis ioredis
+npm install @reaatech/idempotency-middleware-adapter-dynamodb @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb
+npm install @reaatech/idempotency-middleware-adapter-firestore @google-cloud/firestore
 ```
 
-The core package ships with the `MemoryAdapter` and requires no additional dependencies. Install peer packages only for the storage backend(s) you use:
+### Contributing
 
 ```bash
-npm install ioredis                                           # Redis
-npm install @aws-sdk/client-dynamodb \                        # DynamoDB
-           @aws-sdk/util-dynamodb \
-           @aws-sdk/lib-dynamodb
-npm install @google-cloud/firestore                           # Firestore
-```
+# Clone the repository
+git clone https://github.com/reaatech/idempotency-middleware.git
+cd idempotency-middleware
 
-> Express and Koa are optional peer dependencies. To use a framework adapter, `express` or `koa` must already be installed in your project.
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Run the test suite
+pnpm test
+
+# Run type checking
+pnpm typecheck
+```
 
 ## Quick Start
 
 ### Express
 
-```ts
-import express from "express";
-import { MemoryAdapter } from "@reaatech/idempotency-middleware";
-import { idempotentExpress } from "@reaatech/idempotency-middleware/express";
+```typescript
+import express from 'express';
+import { MemoryAdapter } from '@reaatech/idempotency-middleware';
+import { idempotentExpress } from '@reaatech/idempotency-middleware-express';
 
 const adapter = new MemoryAdapter();
 await adapter.connect();
 
 const app = express();
 app.use(express.json());
-app.use(idempotentExpress(adapter, { ttl: 24 * 60 * 60 * 1000 }));
+app.use(idempotentExpress(adapter));
 
-app.post("/charges", (req, res) => {
-  res.status(201).json({ id: createCharge(req.body) });
+let counter = 0;
+app.post('/charges', (req, res) => {
+  res.status(201).json({ id: ++counter, amount: req.body.amount });
 });
-```
 
-```bash
-curl -XPOST http://localhost:3000/charges \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: order-42" \
-  -d '{"amount": 100}'
-# Subsequent requests with the same Idempotency-Key return the cached
-# 201 + body without re-executing the handler.
+app.listen(3000);
 ```
 
 ### Koa
 
-```ts
-import Koa from "koa";
-import bodyParser from "koa-bodyparser";
-import Redis from "ioredis";
-import { RedisAdapter } from "@reaatech/idempotency-middleware/redis";
-import { idempotentKoa } from "@reaatech/idempotency-middleware/koa";
+```typescript
+import Koa from 'koa';
+import bodyParser from 'koa-bodyparser';
+import { MemoryAdapter } from '@reaatech/idempotency-middleware';
+import { idempotentKoa } from '@reaatech/idempotency-middleware-koa';
 
-const adapter = new RedisAdapter(new Redis(process.env.REDIS_URL));
+const adapter = new MemoryAdapter();
 await adapter.connect();
 
 const app = new Koa();
 app.use(bodyParser());
 app.use(idempotentKoa(adapter));
 
-app.use(async (ctx) => {
-  if (ctx.method === "POST" && ctx.path === "/charges") {
+app.use((ctx) => {
+  if (ctx.method === 'POST' && ctx.path === '/charges') {
     ctx.status = 201;
-    ctx.body = { id: await createCharge(ctx.request.body) };
+    ctx.body = { id: 1, amount: ctx.request.body?.amount };
   }
+});
+
+app.listen(3000);
+```
+
+### Raw Handler (Lambda, Queues, gRPC)
+
+```typescript
+import { idempotentHandler, MemoryAdapter } from '@reaatech/idempotency-middleware';
+
+const storage = new MemoryAdapter();
+await storage.connect();
+
+const handler = idempotentHandler(
+  storage,
+  async (event) => ({ processed: true }),
+  { ttl: 3_600_000 },
+);
+
+// Call with input, idempotency key, and optional context
+const result = await handler(payload, 'unique-key-abc', {
+  method: 'POST',
+  path: '/webhook',
 });
 ```
 
-### Raw Handler (any framework)
+See the [`examples/`](./examples/) directory for complete working samples.
 
-`idempotentHandler` wraps any async function, making it safe to retry with the same key — ideal for Lambda handlers, queue consumers, gRPC services, and other non-HTTP runtimes.
+## Packages
 
-```ts
-import { MemoryAdapter, idempotentHandler } from "@reaatech/idempotency-middleware";
+| Package | Description |
+|---|---|
+| [`@reaatech/idempotency-middleware`](./packages/core) | Core middleware, `MemoryAdapter`, `StorageAdapter` interface, utilities |
+| [`@reaatech/idempotency-middleware-express`](./packages/express) | Express middleware adapter |
+| [`@reaatech/idempotency-middleware-koa`](./packages/koa) | Koa middleware adapter |
+| [`@reaatech/idempotency-middleware-adapter-redis`](./packages/adapter-redis) | Redis storage adapter (ioredis) |
+| [`@reaatech/idempotency-middleware-adapter-dynamodb`](./packages/adapter-dynamodb) | DynamoDB storage adapter (AWS SDK v3) |
+| [`@reaatech/idempotency-middleware-adapter-firestore`](./packages/adapter-firestore) | Firestore storage adapter (GCP Firestore) |
 
-const adapter = new MemoryAdapter();
-await adapter.connect();
+## How It Works
 
-const charge = idempotentHandler(
-  adapter,
-  async (input: { amount: number }) => {
-    return { id: await createCharge(input) };
-  },
-);
-
-await charge({ amount: 100 }, "order-42");
-await charge({ amount: 100 }, "order-42"); // cache hit, handler not invoked
 ```
-
-## Storage Adapters
-
-| Adapter            | Import path | Peer dependency |
-|--------------------|-------------|----------------|
-| `MemoryAdapter`    | `@reaatech/idempotency-middleware` | _none_ |
-| `RedisAdapter`     | `@reaatech/idempotency-middleware/redis` | `ioredis` |
-| `DynamoDBAdapter`  | `@reaatech/idempotency-middleware/dynamodb` | `@aws-sdk/client-dynamodb`, `@aws-sdk/util-dynamodb`, `@aws-sdk/lib-dynamodb` |
-| `FirestoreAdapter` | `@reaatech/idempotency-middleware/firestore` | `@google-cloud/firestore` |
-
-Each adapter implements the same `StorageAdapter` interface, so swapping backends is a one-line change.
-
-```ts
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBAdapter } from "@reaatech/idempotency-middleware/dynamodb";
-
-const adapter = new DynamoDBAdapter(
-  new DynamoDBClient({ region: "us-east-1" }),
-  "idempotency-cache", // table name (default: "idempotency-cache")
-);
+Client sends POST /charges with Idempotency-Key: abc-123
+                    │
+                    ▼
+         ┌─────────────────────┐
+         │  Cache key lookup   │
+         │  (SHA-256 hash of   │
+         │   method + path +   │
+         │   key + body hash)  │
+         └─────────┬───────────┘
+                   │
+        ┌──────────┴──────────┐
+        ▼                     ▼
+   Cache hit              Cache miss
+   Return cached          Acquire lock
+   response               ──┬──
+                       ┌─────┴─────┐
+                       ▼           ▼
+                  Lock acquired  Lock held
+                  Double-check   Wait for lock
+                  cache ──┬──    then return
+                  ┌───────┴──────┐  cached response
+                  ▼              ▼     or 409
+             Still empty     Has data
+             Execute handler Replay it
+             Cache result
+             Release lock
 ```
-
-DynamoDB table prerequisites: partition key `cacheKey` (String). Optionally enable DynamoDB TTL on the `expiresAt` attribute (numeric, epoch seconds) for automatic eviction.
-
-Firestore prerequisites: collection name defaults to `idempotency_cache`. Configure a Firestore TTL policy on the `expiresAt` field for automatic eviction.
 
 ## Configuration
 
-All framework adapters accept the same options:
+All configuration flows through `IdempotencyConfig`:
 
-```ts
-interface IdempotencyConfig {
-  /** Header to read the key from. Default: "Idempotency-Key" */
-  headerName?: string;
-
-  /** Cache lifetime in ms. Default: 24h */
-  ttl?: number;
-
-  /** HTTP methods to apply idempotency to. Default: POST, PUT, PATCH */
-  methods?: string[];
-
-  /** Custom key extractor. Falls back to header. */
-  getKey?: (request: unknown) => string | undefined;
-
-  /** Decide whether to cache a particular response. Default: cache everything. */
-  shouldCache?: (response: unknown) => boolean;
-
-  /** Headers that vary the response (added to cache key). */
-  varyHeaders?: string[];
-
-  /** Hash the request body into the cache key. Default: true. */
-  includeBodyInKey?: boolean;
-
-  /** Max idempotency-key length. Default: 256 chars. */
-  maxKeyLength?: number;
-
-  /**
-   * Max time (ms) a duplicate request will wait for the original to finish.
-   * Throws IdempotencyError(LOCK_TIMEOUT) on expiry. Default: 30s.
-   */
-  lockTimeout?: number;
-
-  /**
-   * How long an acquired lock stays valid (ms). Should be greater than the
-   * worst-case handler runtime. Defaults to lockTimeout.
-   */
-  lockTtl?: number;
-
-  /** Lock polling interval (ms). Default: 100. */
-  lockPollInterval?: number;
+```typescript
+{
+  headerName: 'Idempotency-Key',  // Header to extract key from
+  ttl: 86400000,                   // Cache TTL (24h default)
+  methods: ['POST', 'PUT', 'PATCH'], // Methods to apply idempotency to
+  includeBodyInKey: true,          // Hash request body into cache key
+  maxKeyLength: 256,               // Max idempotency key length
+  lockTimeout: 30000,              // Max wait for lock (30s)
+  lockTtl: 30000,                  // Lock auto-expiry
+  lockPollInterval: 100,           // Lock check interval (ms)
+  varyHeaders: [],                 // Headers to include in cache key
+  getKey: (req) => string,         // Custom key extraction function
+  shouldCache: (res) => boolean,   // Filter which responses to cache
 }
-```
-
-### Skipping cache for certain responses
-
-```ts
-idempotentExpress(adapter, {
-  shouldCache: (body) => {
-    // Allow retries for transient errors (e.g. 503, rate limits).
-    if (body instanceof Error) return false;
-    return true;
-  },
-});
-```
-
-### Custom key extraction
-
-```ts
-idempotentExpress(adapter, {
-  getKey: (req) => `${req.user.id}:${req.headers["idempotency-key"]}`,
-});
 ```
 
 ## Error Handling
 
-All errors thrown by the library extend `IdempotencyError` and expose a `code` property and a suggested HTTP status:
+All idempotency errors use the typed `IdempotencyError` class with structured error codes:
 
-| Code                  | HTTP | Meaning                                                  |
-| --------------------- | ---- | -------------------------------------------------------- |
-| `KEY_REQUIRED`        | 400  | Missing or oversized key                                 |
-| `LOCK_TIMEOUT`        | 409  | Waited too long for original request to finish          |
-| `CONFLICT`            | 409  | Lock holder finished without storing a response         |
-| `STORAGE_ERROR`       | 503  | Underlying storage adapter failed                        |
-| `SERIALIZATION_ERROR` | 500  | Could not serialize the response for caching             |
-| `INVALID_CONFIG`      | 500  | Bad config supplied                                      |
-| `NOT_CONNECTED`       | 500  | `adapter.connect()` was never awaited                    |
+| Code | HTTP Status | Description |
+|---|---|---|
+| `KEY_REQUIRED` | 400 | Missing or empty idempotency key |
+| `LOCK_TIMEOUT` | 409 | Lock acquisition/wait exceeded timeout |
+| `CONFLICT` | 409 | Lock holder crashed without storing a response |
+| `STORAGE_ERROR` | 503 | Storage operation failed |
+| `SERIALIZATION_ERROR` | 500 | Response serialization failed |
+| `INVALID_CONFIG` | 500 | Misconfigured middleware |
+| `NOT_CONNECTED` | 500 | Adapter used before `connect()` |
 
-Express adapter accepts a custom `errorHandler`; Koa adapter falls back to a JSON `{ error, code }` body if none is provided.
+Both the Express and Koa adapters support custom error handlers via the `errorHandler` config option.
 
-## How It Works
+## Choosing a Storage Adapter
 
-1. Request arrives with an `Idempotency-Key` header.
-2. The middleware computes a SHA-256 cache key from `(method, path, key, body, varyHeaders)`.
-3. If the cache hits, the stored response is replayed.
-4. Otherwise the middleware acquires a distributed lock for that cache key.
-5. If the lock can't be acquired (a duplicate is already running), it polls until the lock releases, then returns the cached response.
-6. On the leader's first run, the response (success **or** error) is stored under the cache key for the configured TTL, and the lock is released.
+| Adapter | Use Case |
+|---|---|
+| `MemoryAdapter` | Development, testing, single-process apps |
+| `RedisAdapter` | Multi-process deployments, low-latency distributed locking |
+| `DynamoDBAdapter` | Serverless (Lambda), AWS-native deployments |
+| `FirestoreAdapter` | GCP-native deployments, strong consistency |
 
-Errors are serialized with a tag so they survive JSON-only storage backends and are reconstructed as real `Error` instances on read.
+All adapters implement the same `StorageAdapter` interface — swap them without changing application code.
 
-## Compatibility
+## Documentation
 
-- **Node.js 18+**
-- **TypeScript 5.x** (works without TS too — full `.d.ts` shipped)
-- **ESM and CJS** dual package
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — System design, package relationships, and data flows
+- [`AGENTS.md`](./AGENTS.md) — Coding conventions and development guidelines
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — Contribution workflow and release process
+
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+[MIT](LICENSE)
