@@ -1,8 +1,8 @@
-import Koa from 'koa';
-import bodyParser from 'koa-bodyparser';
-import { Redis } from 'ioredis';
 import { RedisAdapter } from '@reaatech/idempotency-middleware-adapter-redis';
 import { idempotentKoa } from '@reaatech/idempotency-middleware-koa';
+import { Redis } from 'ioredis';
+import Koa from 'koa';
+import bodyParser from 'koa-bodyparser';
 
 const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379');
 const adapter = new RedisAdapter(redis);

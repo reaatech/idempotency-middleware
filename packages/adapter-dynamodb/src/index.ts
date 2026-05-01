@@ -1,13 +1,12 @@
-import { DynamoDBClient, GetItemCommand, PutItemCommand, DeleteItemCommand } from '@aws-sdk/client-dynamodb';
-import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import {
-  IdempotencyError,
-  IdempotencyErrorCode,
-} from '@reaatech/idempotency-middleware';
-import type {
-  StorageAdapter,
-  IdempotencyRecord,
-} from '@reaatech/idempotency-middleware';
+  DeleteItemCommand,
+  type DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+} from '@aws-sdk/client-dynamodb';
+import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
+import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
 
 export class DynamoDBAdapter implements StorageAdapter {
   private client: DynamoDBClient;
@@ -110,11 +109,7 @@ export class DynamoDBAdapter implements StorageAdapter {
     await this.client.send(command);
   }
 
-  async waitForLock(
-    key: string,
-    timeout: number,
-    pollInterval: number,
-  ): Promise<void> {
+  async waitForLock(key: string, timeout: number, pollInterval: number): Promise<void> {
     const lockKey = `lock:${key}`;
     const startTime = Date.now();
 
@@ -134,9 +129,6 @@ export class DynamoDBAdapter implements StorageAdapter {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new IdempotencyError(
-      IdempotencyErrorCode.LOCK_TIMEOUT,
-      'Lock wait timeout exceeded',
-    );
+    throw new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, 'Lock wait timeout exceeded');
   }
 }

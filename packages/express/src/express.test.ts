@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import request from 'supertest';
-import express from 'express';
-import { idempotentExpress } from './index.js';
 import {
-  MemoryAdapter,
   IdempotencyError,
   IdempotencyErrorCode,
+  MemoryAdapter,
 } from '@reaatech/idempotency-middleware';
+import express from 'express';
+import request from 'supertest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { idempotentExpress } from './index.js';
 
 describe('Express Middleware E2E', () => {
   let app: express.Express;
@@ -444,8 +444,7 @@ describe('Express Middleware E2E', () => {
     app2.use(
       idempotentExpress(adapter2, {
         ttl: 60000,
-        getKey: (req) =>
-          (req as { headers: Record<string, string> }).headers['x-custom-key'],
+        getKey: (req) => (req as { headers: Record<string, string> }).headers['x-custom-key'],
       }),
     );
 
@@ -455,11 +454,7 @@ describe('Express Middleware E2E', () => {
       res.json({ count });
     });
 
-    await request(app2)
-      .post('/api/custom')
-      .set('X-Custom-Key', 'aaa')
-      .send({})
-      .expect(200);
+    await request(app2).post('/api/custom').set('X-Custom-Key', 'aaa').send({}).expect(200);
     const r2 = await request(app2)
       .post('/api/custom')
       .set('X-Custom-Key', 'aaa')

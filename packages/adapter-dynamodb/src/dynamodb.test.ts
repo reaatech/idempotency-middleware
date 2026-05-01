@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DynamoDBAdapter } from './index.js';
-import {
-  DynamoDBClient,
-  DeleteItemCommand,
-} from '@aws-sdk/client-dynamodb';
+import { DeleteItemCommand, type DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { marshall } from '@aws-sdk/util-dynamodb';
 import type { IdempotencyRecord } from '@reaatech/idempotency-middleware';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DynamoDBAdapter } from './index.js';
 
 describe('DynamoDBAdapter', () => {
   let mockClient: DynamoDBClient;
@@ -87,8 +84,7 @@ describe('DynamoDBAdapter', () => {
       expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({
           input: expect.objectContaining({
-            ConditionExpression:
-              'attribute_not_exists(cacheKey) OR expiresAt < :nowSec',
+            ConditionExpression: 'attribute_not_exists(cacheKey) OR expiresAt < :nowSec',
             ExpressionAttributeValues: expect.objectContaining({
               ':nowSec': expect.objectContaining({ N: expect.any(String) }),
             }),

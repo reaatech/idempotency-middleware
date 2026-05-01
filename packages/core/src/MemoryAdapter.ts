@@ -1,6 +1,6 @@
 import type { StorageAdapter } from './StorageAdapter.js';
-import type { IdempotencyRecord } from './types.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
+import type { IdempotencyRecord } from './types.js';
 
 interface CacheEntry {
   record: IdempotencyRecord;
@@ -32,10 +32,7 @@ export class MemoryAdapter implements StorageAdapter {
 
   async get(key: string): Promise<IdempotencyRecord | null> {
     if (!this.connected) {
-      throw new IdempotencyError(
-        IdempotencyErrorCode.NOT_CONNECTED,
-        'MemoryAdapter not connected',
-      );
+      throw new IdempotencyError(IdempotencyErrorCode.NOT_CONNECTED, 'MemoryAdapter not connected');
     }
 
     const entry = this.cache.get(key);
@@ -54,10 +51,7 @@ export class MemoryAdapter implements StorageAdapter {
 
   async set(key: string, record: IdempotencyRecord): Promise<void> {
     if (!this.connected) {
-      throw new IdempotencyError(
-        IdempotencyErrorCode.NOT_CONNECTED,
-        'MemoryAdapter not connected',
-      );
+      throw new IdempotencyError(IdempotencyErrorCode.NOT_CONNECTED, 'MemoryAdapter not connected');
     }
 
     await this.delete(key);
@@ -118,9 +112,6 @@ export class MemoryAdapter implements StorageAdapter {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new IdempotencyError(
-      IdempotencyErrorCode.LOCK_TIMEOUT,
-      'Lock wait timeout exceeded',
-    );
+    throw new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, 'Lock wait timeout exceeded');
   }
 }

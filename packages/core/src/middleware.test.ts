@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { IdempotencyMiddleware } from './middleware.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryAdapter } from './MemoryAdapter.js';
-import { IdempotencyError } from './errors.js';
 import type { StorageAdapter } from './StorageAdapter.js';
+import { IdempotencyError } from './errors.js';
+import { IdempotencyMiddleware } from './middleware.js';
 
 describe('IdempotencyMiddleware', () => {
   let storage: StorageAdapter;
@@ -65,11 +65,9 @@ describe('IdempotencyMiddleware', () => {
     });
 
     const originalWait = storage.waitForLock.bind(storage);
-    storage.waitForLock = vi.fn(
-      async (key: string, timeout: number, pollInterval: number) => {
-        await originalWait(key, timeout, pollInterval);
-      },
-    );
+    storage.waitForLock = vi.fn(async (key: string, timeout: number, pollInterval: number) => {
+      await originalWait(key, timeout, pollInterval);
+    });
 
     const handler = vi.fn().mockImplementation(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -90,13 +88,9 @@ describe('IdempotencyMiddleware', () => {
     const error = new Error('Payment failed');
     const handler = vi.fn().mockRejectedValue(error);
 
-    await expect(middleware.execute('error-key', {}, handler)).rejects.toThrow(
-      'Payment failed',
-    );
+    await expect(middleware.execute('error-key', {}, handler)).rejects.toThrow('Payment failed');
 
-    await expect(middleware.execute('error-key', {}, handler)).rejects.toThrow(
-      'Payment failed',
-    );
+    await expect(middleware.execute('error-key', {}, handler)).rejects.toThrow('Payment failed');
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
@@ -115,9 +109,9 @@ describe('IdempotencyMiddleware', () => {
 
     const handler = vi.fn().mockResolvedValue({ ok: true });
 
-    await expect(
-      middleware.execute('serialized-error-key', {}, handler),
-    ).rejects.toThrow('Card declined');
+    await expect(middleware.execute('serialized-error-key', {}, handler)).rejects.toThrow(
+      'Card declined',
+    );
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -156,16 +150,8 @@ describe('IdempotencyMiddleware', () => {
   it('should include body hash in cache key by default', async () => {
     const handler = vi.fn().mockResolvedValue({ data: 'result' });
 
-    const result1 = await middleware.execute(
-      'body-key',
-      { body: { amount: 100 } },
-      handler,
-    );
-    const result2 = await middleware.execute(
-      'body-key',
-      { body: { amount: 200 } },
-      handler,
-    );
+    const result1 = await middleware.execute('body-key', { body: { amount: 100 } }, handler);
+    const result2 = await middleware.execute('body-key', { body: { amount: 200 } }, handler);
 
     expect(result1).toEqual({ data: 'result' });
     expect(result2).toEqual({ data: 'result' });
@@ -175,16 +161,8 @@ describe('IdempotencyMiddleware', () => {
   it('should reuse cache key when body is same', async () => {
     const handler = vi.fn().mockResolvedValue({ data: 'result' });
 
-    const result1 = await middleware.execute(
-      'same-body-key',
-      { body: { amount: 100 } },
-      handler,
-    );
-    const result2 = await middleware.execute(
-      'same-body-key',
-      { body: { amount: 100 } },
-      handler,
-    );
+    const result1 = await middleware.execute('same-body-key', { body: { amount: 100 } }, handler);
+    const result2 = await middleware.execute('same-body-key', { body: { amount: 100 } }, handler);
 
     expect(result1).toEqual({ data: 'result' });
     expect(result2).toEqual({ data: 'result' });
@@ -253,9 +231,9 @@ describe('IdempotencyMiddleware', () => {
 
     const handler = vi.fn().mockResolvedValue({ data: 'new' });
 
-    await expect(
-      middleware.execute('cached-error-key', {}, handler),
-    ).rejects.toThrow('Previous handler failed');
+    await expect(middleware.execute('cached-error-key', {}, handler)).rejects.toThrow(
+      'Previous handler failed',
+    );
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -296,9 +274,9 @@ describe('IdempotencyMiddleware', () => {
 
     const handler = vi.fn().mockResolvedValue({ data: 'new' });
 
-    await expect(
-      middleware.execute('double-check-error-key', {}, handler),
-    ).rejects.toThrow('Double-check error');
+    await expect(middleware.execute('double-check-error-key', {}, handler)).rejects.toThrow(
+      'Double-check error',
+    );
     expect(handler).not.toHaveBeenCalled();
   });
 });

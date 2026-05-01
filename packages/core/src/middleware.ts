@@ -1,8 +1,8 @@
 import type { StorageAdapter } from './StorageAdapter.js';
-import type { IdempotencyConfig, IdempotencyRecord, CacheKeyOptions } from './types.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
-import { generateCacheKey, hashBody, extractVaryHeaders } from './hash.js';
-import { serializeResponse, deserializeResponse } from './serialize.js';
+import { extractVaryHeaders, generateCacheKey, hashBody } from './hash.js';
+import { deserializeResponse, serializeResponse } from './serialize.js';
+import type { CacheKeyOptions, IdempotencyConfig, IdempotencyRecord } from './types.js';
 
 interface ResolvedConfig extends Required<Omit<IdempotencyConfig, 'lockTtl'>> {
   lockTtl: number;
@@ -32,10 +32,7 @@ export class IdempotencyMiddleware {
 
   async execute<T, R>(key: string, context: T, handler: () => Promise<R>): Promise<R> {
     if (!key || key.trim() === '') {
-      throw new IdempotencyError(
-        IdempotencyErrorCode.KEY_REQUIRED,
-        'Idempotency key is required',
-      );
+      throw new IdempotencyError(IdempotencyErrorCode.KEY_REQUIRED, 'Idempotency key is required');
     }
     if (key.length > this.config.maxKeyLength) {
       throw new IdempotencyError(
@@ -99,7 +96,11 @@ export class IdempotencyMiddleware {
         });
       }
     } else {
-      await this.storage.waitForLock(cacheKey, this.config.lockTimeout, this.config.lockPollInterval);
+      await this.storage.waitForLock(
+        cacheKey,
+        this.config.lockTimeout,
+        this.config.lockPollInterval,
+      );
 
       const cached = await this.storage.get(cacheKey);
       if (!cached) {

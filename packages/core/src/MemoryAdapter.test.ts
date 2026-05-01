@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryAdapter } from './MemoryAdapter.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
 import type { IdempotencyRecord } from './types.js';

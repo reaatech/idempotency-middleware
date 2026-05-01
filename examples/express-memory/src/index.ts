@@ -1,6 +1,6 @@
-import express from 'express';
 import { MemoryAdapter } from '@reaatech/idempotency-middleware';
 import { idempotentExpress } from '@reaatech/idempotency-middleware-express';
+import express from 'express';
 
 const adapter = new MemoryAdapter();
 await adapter.connect();

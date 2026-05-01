@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import {
+  IdempotencyError,
+  IdempotencyErrorCode,
+  MemoryAdapter,
+} from '@reaatech/idempotency-middleware';
 import Koa from 'koa';
 import type { Context } from 'koa';
 import bodyParser from 'koa-bodyparser';
 import request from 'supertest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { idempotentKoa } from './index.js';
-import {
-  MemoryAdapter,
-  IdempotencyError,
-  IdempotencyErrorCode,
-} from '@reaatech/idempotency-middleware';
 
 describe('Koa Middleware E2E', () => {
   let app: Koa;

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { serializeResponse, deserializeResponse } from './serialize.js';
+import { describe, expect, it } from 'vitest';
+import { deserializeResponse, serializeResponse } from './serialize.js';
 
 describe('serializeResponse / deserializeResponse', () => {
   it('passes through plain values unchanged', () => {

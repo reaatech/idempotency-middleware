@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { idempotentHandler, createHandlerContext } from './handler.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryAdapter } from './MemoryAdapter.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
+import { createHandlerContext, idempotentHandler } from './handler.js';
 
 describe('idempotentHandler', () => {
   let adapter: MemoryAdapter;
@@ -122,9 +122,7 @@ describe('idempotentHandler', () => {
     const handler = async () => 'result';
     const wrapped = idempotentHandler(adapter, handler);
 
-    await expect(wrapped('input', 'conflict-key')).rejects.toThrow(
-      'Idempotency-Key In Use',
-    );
+    await expect(wrapped('input', 'conflict-key')).rejects.toThrow('Idempotency-Key In Use');
   });
 
   it('should throw cached error when lock holder stored an error', async () => {
@@ -145,9 +143,7 @@ describe('idempotentHandler', () => {
     const handler = async () => 'result';
     const wrapped = idempotentHandler(adapter, handler);
 
-    await expect(wrapped('input', 'cached-error-key')).rejects.toThrow(
-      'Previous failure',
-    );
+    await expect(wrapped('input', 'cached-error-key')).rejects.toThrow('Previous failure');
   });
 
   it('should return cached response after waiting for lock', async () => {

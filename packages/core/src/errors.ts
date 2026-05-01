@@ -38,15 +38,15 @@ export class IdempotencyError extends Error {
     this.code = code;
     this.context = options?.context;
 
-    if (
-      typeof (Error as { captureStackTrace?: unknown }).captureStackTrace ===
-      'function'
-    ) {
-      (
-        Error as unknown as {
-          captureStackTrace(target: object, constructor?: Function): void;
-        }
-      ).captureStackTrace(this, IdempotencyError);
+    if (typeof (Error as { captureStackTrace?: unknown }).captureStackTrace === 'function') {
+      type CaptureStackTrace = (
+        target: object,
+        ctor?: { new (..._args: never[]): unknown },
+      ) => void;
+      (Error as unknown as { captureStackTrace: CaptureStackTrace }).captureStackTrace(
+        this,
+        IdempotencyError as unknown as { new (..._args: never[]): unknown },
+      );
     }
   }
 

@@ -1,29 +1,21 @@
-import type { Request, Response, NextFunction } from 'express';
 import {
   IdempotencyError,
   IdempotencyErrorCode,
+  deserializeResponse,
+  extractVaryHeaders,
   generateCacheKey,
   hashBody,
-  extractVaryHeaders,
-  serializeResponse,
-  deserializeResponse,
   normalizeHeaders,
+  serializeResponse,
 } from '@reaatech/idempotency-middleware';
-import type {
-  StorageAdapter,
-  IdempotencyConfig,
-} from '@reaatech/idempotency-middleware';
+import type { IdempotencyConfig, StorageAdapter } from '@reaatech/idempotency-middleware';
+import type { NextFunction, Request, Response } from 'express';
 
 export interface ExpressIdempotencyConfig extends IdempotencyConfig {
   /**
    * Custom error handler for Express
    */
-  errorHandler?: (
-    err: IdempotencyError,
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => void;
+  errorHandler?: (err: IdempotencyError, req: Request, res: Response, next: NextFunction) => void;
 }
 
 function applyCachedResponse(
@@ -35,10 +27,7 @@ function applyCachedResponse(
   res.status(statusCode ?? 200);
   if (headers) {
     for (const [k, v] of Object.entries(headers)) {
-      if (
-        k.toLowerCase() === 'content-length' ||
-        k.toLowerCase() === 'transfer-encoding'
-      ) {
+      if (k.toLowerCase() === 'content-length' || k.toLowerCase() === 'transfer-encoding') {
         continue;
       }
       res.set(k, v);
@@ -167,12 +156,12 @@ export function idempotentExpress(
       };
 
       const originalSend = res.send.bind(res);
-      res.send = function send(body: unknown): Response {
-        if (!bodyCaptured && arguments.length === 1 && typeof body !== 'number') {
+      res.send = function send(...args: [unknown?]): Response {
+        if (!bodyCaptured && args.length === 1 && typeof args[0] !== 'number') {
           bodyCaptured = true;
-          capturedBody = body;
+          capturedBody = args[0];
         }
-        return originalSend(body);
+        return originalSend(...args);
       };
 
       const cleanup = (persist: boolean): void => {

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { generateCacheKey, hashBody, extractVaryHeaders } from './hash.js';
+import { describe, expect, it } from 'vitest';
+import { extractVaryHeaders, generateCacheKey, hashBody } from './hash.js';
 
 describe('hash utils', () => {
   describe('generateCacheKey', () => {

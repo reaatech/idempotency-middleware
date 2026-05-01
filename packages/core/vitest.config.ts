@@ -8,13 +8,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json-summary'],
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/index.ts',
-        'src/types.ts',
-        'src/StorageAdapter.ts',
-        '*.config.*',
-        'dist/**',
-      ],
+      exclude: ['src/index.ts', 'src/types.ts', 'src/StorageAdapter.ts', '*.config.*', 'dist/**'],
       thresholds: {
         lines: 90,
         branches: 85,

@@ -1,12 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import {
-  IdempotencyError,
-  IdempotencyErrorCode,
-} from '@reaatech/idempotency-middleware';
-import type {
-  StorageAdapter,
-  IdempotencyRecord,
-} from '@reaatech/idempotency-middleware';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
+import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
 import type { Redis } from 'ioredis';
 
 const RELEASE_LOCK_LUA = `
@@ -91,11 +85,7 @@ export class RedisAdapter implements StorageAdapter {
     await this.client.eval(RELEASE_LOCK_LUA, 1, lockKey, token);
   }
 
-  async waitForLock(
-    key: string,
-    timeout: number,
-    pollInterval: number,
-  ): Promise<void> {
+  async waitForLock(key: string, timeout: number, pollInterval: number): Promise<void> {
     const lockKey = `lock:${key}`;
     const startTime = Date.now();
 
@@ -107,9 +97,6 @@ export class RedisAdapter implements StorageAdapter {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new IdempotencyError(
-      IdempotencyErrorCode.LOCK_TIMEOUT,
-      'Lock wait timeout exceeded',
-    );
+    throw new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, 'Lock wait timeout exceeded');
   }
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
 
 describe('IdempotencyError', () => {
@@ -23,21 +23,19 @@ describe('IdempotencyError', () => {
 
   describe('isRecoverable', () => {
     it('should return true for recoverable codes', () => {
-      expect(
-        new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, '').isRecoverable(),
-      ).toBe(true);
-      expect(
-        new IdempotencyError(IdempotencyErrorCode.STORAGE_ERROR, '').isRecoverable(),
-      ).toBe(true);
+      expect(new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, '').isRecoverable()).toBe(
+        true,
+      );
+      expect(new IdempotencyError(IdempotencyErrorCode.STORAGE_ERROR, '').isRecoverable()).toBe(
+        true,
+      );
     });
 
     it('should return false for non-recoverable codes', () => {
-      expect(
-        new IdempotencyError(IdempotencyErrorCode.KEY_REQUIRED, '').isRecoverable(),
-      ).toBe(false);
-      expect(
-        new IdempotencyError(IdempotencyErrorCode.CONFLICT, '').isRecoverable(),
-      ).toBe(false);
+      expect(new IdempotencyError(IdempotencyErrorCode.KEY_REQUIRED, '').isRecoverable()).toBe(
+        false,
+      );
+      expect(new IdempotencyError(IdempotencyErrorCode.CONFLICT, '').isRecoverable()).toBe(false);
     });
   });
 

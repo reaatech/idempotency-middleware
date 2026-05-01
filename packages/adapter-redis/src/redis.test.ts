@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RedisAdapter } from './index.js';
-import type { Redis } from 'ioredis';
 import type { IdempotencyRecord } from '@reaatech/idempotency-middleware';
+import type { Redis } from 'ioredis';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RedisAdapter } from './index.js';
 
 describe('RedisAdapter', () => {
   let mockClient: Redis;
@@ -94,12 +94,7 @@ describe('RedisAdapter', () => {
 
       await adapter.releaseLock('lock-key');
 
-      expect(mockClient.eval).toHaveBeenCalledWith(
-        expect.any(String),
-        1,
-        'lock:lock-key',
-        token,
-      );
+      expect(mockClient.eval).toHaveBeenCalledWith(expect.any(String), 1, 'lock:lock-key', token);
     });
 
     it('should noop releaseLock if no token was acquired', async () => {

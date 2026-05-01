@@ -1,8 +1,8 @@
 import type { StorageAdapter } from './StorageAdapter.js';
-import type { IdempotencyConfig } from './types.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
-import { generateCacheKey, hashBody, extractVaryHeaders } from './hash.js';
-import { serializeResponse, deserializeResponse } from './serialize.js';
+import { extractVaryHeaders, generateCacheKey, hashBody } from './hash.js';
+import { deserializeResponse, serializeResponse } from './serialize.js';
+import type { IdempotencyConfig } from './types.js';
 
 /**
  * Context for raw handler execution
@@ -30,7 +30,11 @@ export function idempotentHandler<TInput = unknown, TOutput = unknown>(
   storage: StorageAdapter,
   handler: RawHandler<TInput, TOutput>,
   config: IdempotencyConfig = {},
-): (input: TInput, idempotencyKey: string, context?: Partial<RawHandlerContext>) => Promise<TOutput> {
+): (
+  input: TInput,
+  idempotencyKey: string,
+  context?: Partial<RawHandlerContext>,
+) => Promise<TOutput> {
   const lockTimeout = config.lockTimeout ?? 30000;
   const lockTtl = config.lockTtl ?? lockTimeout;
   const lockPollInterval = config.lockPollInterval ?? 100;

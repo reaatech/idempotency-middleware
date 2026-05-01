@@ -1,18 +1,15 @@
-import type { Context, Next, Request as KoaRequest } from 'koa';
 import {
   IdempotencyError,
   IdempotencyErrorCode,
+  deserializeResponse,
+  extractVaryHeaders,
   generateCacheKey,
   hashBody,
-  extractVaryHeaders,
-  serializeResponse,
-  deserializeResponse,
   normalizeHeaders,
+  serializeResponse,
 } from '@reaatech/idempotency-middleware';
-import type {
-  StorageAdapter,
-  IdempotencyConfig,
-} from '@reaatech/idempotency-middleware';
+import type { IdempotencyConfig, StorageAdapter } from '@reaatech/idempotency-middleware';
+import type { Context, Request as KoaRequest, Next } from 'koa';
 
 export interface KoaIdempotencyConfig extends IdempotencyConfig {
   /**

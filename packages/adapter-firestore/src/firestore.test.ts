@@ -1,12 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FirestoreAdapter } from './index.js';
 import type { IdempotencyRecord } from '@reaatech/idempotency-middleware';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FirestoreAdapter } from './index.js';
 
 function createMockFirestore() {
-  const docs = new Map<
-    string,
-    { exists: boolean; data: () => Record<string, unknown> }
-  >();
+  const docs = new Map<string, { exists: boolean; data: () => Record<string, unknown> }>();
 
   return {
     collection: vi.fn(() => ({
@@ -23,32 +20,30 @@ function createMockFirestore() {
         }),
       })),
     })),
-    runTransaction: vi.fn(
-      async (fn: (t: unknown) => Promise<void>) => {
-        const transaction = {
-          get: vi.fn(
-            async (docRef: {
+    runTransaction: vi.fn(async (fn: (t: unknown) => Promise<void>) => {
+      const transaction = {
+        get: vi.fn(
+          async (docRef: {
+            get: () => Promise<unknown>;
+            set: (data: Record<string, unknown>) => Promise<void>;
+          }) => {
+            return docRef.get();
+          },
+        ),
+        set: vi.fn(
+          (
+            docRef: {
               get: () => Promise<unknown>;
               set: (data: Record<string, unknown>) => Promise<void>;
-            }) => {
-              return docRef.get();
             },
-          ),
-          set: vi.fn(
-            (
-              docRef: {
-                get: () => Promise<unknown>;
-                set: (data: Record<string, unknown>) => Promise<void>;
-              },
-              data: Record<string, unknown>,
-            ) => {
-              void docRef.set(data);
-            },
-          ),
-        };
-        await fn(transaction);
-      },
-    ),
+            data: Record<string, unknown>,
+          ) => {
+            void docRef.set(data);
+          },
+        ),
+      };
+      await fn(transaction);
+    }),
   };
 }
 

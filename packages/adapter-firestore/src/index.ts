@@ -1,12 +1,6 @@
-import {
-  IdempotencyError,
-  IdempotencyErrorCode,
-} from '@reaatech/idempotency-middleware';
-import type {
-  StorageAdapter,
-  IdempotencyRecord,
-} from '@reaatech/idempotency-middleware';
-import type { Firestore, CollectionReference } from '@google-cloud/firestore';
+import type { CollectionReference, Firestore } from '@google-cloud/firestore';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
+import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
 
 const LOCK_EXISTS_MARKER = '__idempotency_lock_held__';
 
@@ -98,11 +92,7 @@ export class FirestoreAdapter implements StorageAdapter {
     await this.collection.doc(`lock:${key}`).delete();
   }
 
-  async waitForLock(
-    key: string,
-    timeout: number,
-    pollInterval: number,
-  ): Promise<void> {
+  async waitForLock(key: string, timeout: number, pollInterval: number): Promise<void> {
     const lockKey = `lock:${key}`;
     const startTime = Date.now();
 
@@ -118,9 +108,6 @@ export class FirestoreAdapter implements StorageAdapter {
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
-    throw new IdempotencyError(
-      IdempotencyErrorCode.LOCK_TIMEOUT,
-      'Lock wait timeout exceeded',
-    );
+    throw new IdempotencyError(IdempotencyErrorCode.LOCK_TIMEOUT, 'Lock wait timeout exceeded');
   }
 }
