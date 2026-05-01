@@ -35,6 +35,8 @@ System design, API design, and technical decision-making for the idempotency mid
 - **Mermaid.js** - For creating architecture diagrams
 - **TypeScript** - For type definitions and interfaces
 - **Markdown** - For documentation and specifications
+- **pnpm workspaces** - Monorepo package management
+- **Turborepo** - Build orchestration across packages
 
 ### Analysis Tools
 - **Complexity Analysis** - Evaluate algorithmic complexity
@@ -56,10 +58,11 @@ System design, API design, and technical decision-making for the idempotency mid
 - Performance-first design
 
 ### Compatibility Constraints
-- Must work with Express 4.x
-- Must work with Koa 2.x
-- Must support Redis, Firestore, DynamoDB
+- Must work with Express 4.x and 5.x
+- Must work with Koa 2.x and 3.x
+- Must support Redis (ioredis), Firestore, DynamoDB
 - Must provide in-memory adapter for testing
+- Cross-package dependencies must use `workspace:*` protocol
 
 ## Quality Standards
 

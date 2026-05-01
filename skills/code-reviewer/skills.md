@@ -32,15 +32,13 @@ Quality assurance, security review, code quality analysis, and ensuring adherenc
 ## Tools
 
 ### Code Analysis Tools
-- **ESLint** - Code linting and style checking
-- **TypeScript** - Type checking and analysis
-- **prettier** - Code formatting verification
-- **madge** - Dependency graph analysis
+- **Biome** - Code linting, formatting, and import organization
+- **TypeScript** - Type checking and analysis with `verbatimModuleSyntax`
+- **pnpm** - Dependency graph analysis (`pnpm list --depth=0`)
+- **turbo** - Build health checks
 
 ### Security Tools
-- **npm audit** - Dependency vulnerability scanning
-- **Snyk** - Security vulnerability detection
-- **ESLint security plugin** - Security-focused linting
+- **npm audit** / **pnpm audit** - Dependency vulnerability scanning
 - **OWASP guidelines** - Security best practices
 
 ### Quality Tools

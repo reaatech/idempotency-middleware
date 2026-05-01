@@ -534,11 +534,13 @@ export class DynamoDBAdapter implements StorageAdapter {
 4. Create implementation plan per adapter
 
 ### Implementation Phase
-1. Set up database client connections
-2. Implement StorageAdapter interface
-3. Add error handling and recovery
-4. Optimize for performance
-5. Add comprehensive logging
+1. Implement in `packages/adapter-{redis,dynamodb,firestore}/src/index.ts`
+2. Set up database client connections
+3. Implement StorageAdapter interface
+4. Import core types from `@reaatech/idempotency-middleware`
+5. Add error handling and recovery
+6. Optimize for performance
+7. Add comprehensive logging
 
 ### Testing Phase
 1. Write unit tests with mock implementations

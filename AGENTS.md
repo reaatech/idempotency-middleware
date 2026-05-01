@@ -2,9 +2,11 @@
 
 ## Overview
 
-This document describes the multi-agent development system for the `@reaatech/idempotency-middleware` project. The system uses specialized AI agents, each with specific skills, to collaboratively build and maintain the idempotency middleware.
+This document describes the multi-agent development system for the `@reaatech/idempotency-middleware` monorepo. The system uses specialized AI agents, each with specific skills, to collaboratively build and maintain the idempotency middleware packages.
 
 **Repository:** `github.com/reaatech/idempotency-middleware`
+
+**Monorepo structure:** pnpm workspace with 6 publishable packages under `packages/` and 2 example packages under `examples/`.
 
 ---
 
@@ -30,30 +32,63 @@ This document describes the multi-agent development system for the `@reaatech/id
 ```
 skills/
 ├── architect/
-│   ├── skills.md           # System design skills
-│   └── examples/           # Design examples
+│   └── skills.md
 ├── core-developer/
-│   ├── skills.md           # TypeScript core implementation
-│   └── examples/           # Code examples
+│   └── skills.md
 ├── storage-specialist/
-│   ├── skills.md           # Storage adapter skills
-│   └── examples/           # Adapter examples
+│   └── skills.md
 ├── framework-integrator/
-│   ├── skills.md           # Framework integration skills
-│   └── examples/           # Integration examples
+│   └── skills.md
 ├── test-engineer/
-│   ├── skills.md           # Testing skills
-│   └── examples/           # Test examples
+│   └── skills.md
 ├── devops-engineer/
-│   ├── skills.md           # DevOps skills
-│   └── examples/           # CI/CD examples
+│   └── skills.md
 ├── documentation-writer/
-│   ├── skills.md           # Documentation skills
-│   └── examples/           # Doc examples
+│   └── skills.md
 └── code-reviewer/
-    ├── skills.md           # Code review skills
-    └── examples/           # Review examples
+    └── skills.md
 ```
+
+---
+
+## Monorepo Package Structure
+
+```
+idempotency-middleware/
+├── packages/
+│   ├── core/                     → @reaatech/idempotency-middleware
+│   ├── adapter-redis/            → @reaatech/idempotency-middleware-adapter-redis
+│   ├── adapter-dynamodb/         → @reaatech/idempotency-middleware-adapter-dynamodb
+│   ├── adapter-firestore/        → @reaatech/idempotency-middleware-adapter-firestore
+│   ├── express/                  → @reaatech/idempotency-middleware-express
+│   └── koa/                      → @reaatech/idempotency-middleware-koa
+├── examples/
+│   ├── express-memory/
+│   └── koa-redis/
+├── pnpm-workspace.yaml
+├── turbo.json
+├── biome.json
+├── tsconfig.json / tsconfig.typecheck.json
+├── .changeset/
+├── .github/workflows/{ci,release}.yml
+└── skills/
+```
+
+---
+
+## Toolchain
+
+| Concern | Tool | Config |
+|---|---|---|
+| Package manager | pnpm 10 | `pnpm-workspace.yaml`, `.npmrc` |
+| Monorepo orchestration | Turborepo 2 | `turbo.json` |
+| Build | tsup 8 (per package) | `tsup src/index.ts --format cjs,esm --dts --clean` |
+| Linting | Biome 1.9 | `biome.json` |
+| Formatting | Biome 1.9 | same config |
+| Testing | Vitest 3 | `vitest.config.ts` per package |
+| Type checking | TypeScript 5.8 | `tsconfig.typecheck.json` |
+| Versioning | Changesets | `.changeset/config.json` |
+| CI/CD | GitHub Actions | `.github/workflows/` |
 
 ---
 
@@ -81,13 +116,13 @@ Technical Specification
 ```
 Technical Specification
     │
-    ├──► Core Developer ─────► Core types and middleware
+    ├──► Core Developer ─────► packages/core
     │
-    ├──► Storage Specialist ──► Storage adapters
+    ├──► Storage Specialist ──► packages/adapter-{redis,dynamodb,firestore}
     │
-    ├──► Framework Integrator ► Express/Koa/handler
+    ├──► Framework Integrator ► packages/{express,koa}
     │
-    └──► Test Engineer ───────► Test suite
+    └──► Test Engineer ───────► co-located *.test.ts files
     │
     ▼
 Implementation Complete
@@ -100,9 +135,9 @@ Implementation
     │
     ├──► Code Reviewer ───────► Security & quality review
     │
-    ├──► Documentation Writer ► API docs & examples
+    ├──► Documentation Writer ► API docs, examples, README
     │
-    └──► DevOps Engineer ─────► CI/CD & publishing
+    └──► DevOps Engineer ─────► CI/CD & Changesets publishing
     │
     ▼
 Production Ready
@@ -133,10 +168,11 @@ interface AgentMessage {
   "from": "architect",
   "to": ["core-developer", "storage-specialist"],
   "type": "request",
-  "subject": "Implement StorageAdapter interface",
+  "subject": "Implement StorageAdapter interface for Redis",
   "content": {
     "interface": "StorageAdapter",
-    "methods": ["get", "set", "delete", "exists", "connect", "disconnect"],
+    "methods": ["get", "set", "delete", "connect", "disconnect", "acquireLock", "releaseLock", "waitForLock"],
+    "package": "packages/adapter-redis",
     "deadline": "phase-2"
   },
   "priority": "high",
@@ -151,7 +187,7 @@ interface AgentMessage {
 Each agent has a set of skills defined in their respective `skills/<agent>/skills.md` file. Skills include:
 
 1. **Capabilities** - What the agent can do
-2. **Tools** - What tools the agent uses
+2. **Tools** - What tools the agent uses (Biome, pnpm, tsup, turborepo, vitest, etc.)
 3. **Constraints** - What limitations the agent has
 4. **Quality Standards** - What quality criteria the agent follows
 5. **Examples** - Example outputs from the agent
@@ -160,13 +196,15 @@ Each agent has a set of skills defined in their respective `skills/<agent>/skill
 
 ## Project-Specific Constraints
 
-This is a **public npm package** (`@reaatech/idempotency-middleware`) published under the **MIT license**. All agents must respect the following:
+This is a **public npm monorepo** (`@reaatech/idempotency-middleware` and 5 sibling packages) published under the **MIT license**. All agents must respect the following:
 
 - **Backward Compatibility**: No breaking changes in minor versions. Public APIs must be deprecated before removal.
-- **Zero-Config Defaults**: The in-memory adapter must work out of the box with no configuration.
-- **Optional Dependencies**: Frameworks and storage backends are optional peer dependencies. The core must not require them.
-- **Bundle Size**: Keep the core bundle small. Avoid heavy transitive dependencies.
+- **Monorepo discipline**: Each package has a single responsibility. Cross-package dependencies use `workspace:*`. Adapter and framework packages depend on `@reaatech/idempotency-middleware` (core).
+- **Zero-Config Defaults**: The `MemoryAdapter` in `packages/core` must work out of the box with no configuration or external dependencies.
+- **Peer Dependencies**: Framework and storage backends are `peerDependencies` or `dependencies` of their respective packages. The core package must have zero production dependencies.
+- **Bundle Size**: Keep each package's bundle small. Core must have no transitive dependencies beyond `node:crypto` built-ins.
 - **Node.js 18+**: Must run on Node.js 18 and later.
+- **Dual ESM/CJS**: Every publishable package must produce both ESM and CJS output via tsup.
 
 ## Quality Gates
 
@@ -174,11 +212,13 @@ Before any code is merged, it must pass through these quality gates:
 
 | Gate | Responsible Agent | Criteria |
 |------|-------------------|----------|
-| **Type Safety** | Code Reviewer | No `any` types, strict null checks |
-| **Test Coverage** | Test Engineer | >90% line coverage, >85% branch coverage |
+| **Type Safety** | Code Reviewer | No `any` types, strict null checks, `verbatimModuleSyntax` enabled |
+| **Test Coverage** | Test Engineer | >90% line coverage, >85% branch coverage (per package) |
 | **Security** | Code Reviewer | No vulnerabilities, input validation |
-| **Documentation** | Documentation Writer | TSDoc comments, examples |
-| **Build** | DevOps Engineer | Clean build, no warnings |
+| **Documentation** | Documentation Writer | TSDoc comments, README per package, examples |
+| **Build** | DevOps Engineer | Clean build via `turbo run build`, all packages produce `dist/` |
+| **Format & Lint** | Code Reviewer | Biome check passes (`biome check .`) |
+| **Type Check** | DevOps Engineer | `tsc --noEmit -p tsconfig.typecheck.json` passes |
 | **Performance** | Core Developer | No performance regressions |
 
 ---
@@ -218,6 +258,26 @@ When proposing changes, agents must consider the impact on the public API:
 
 Agents should prefer additive changes (new config options, new methods) over modifying existing behavior.
 
+---
+
+## Release Flow
+
+This project uses Changesets for versioning:
+
+```bash
+pnpm changeset              # Interactive: pick packages, bump type, write summary
+git add .changeset/*.md     # Commit the changeset file
+git commit -m "feat: ..."   # Include in PR
+git push                    # CI runs, opens "Version Packages" PR after merge
+```
+
+The "Version Packages" PR:
+- Bumps versions per pending changesets
+- Generates per-package CHANGELOG entries
+- Updates inter-package `workspace:*` dependency ranges
+
+Merging the Version Packages PR triggers `changeset publish` which publishes all changed packages to npm.
+
 ## Configuration
 
 ### Agent Configuration
@@ -229,37 +289,37 @@ agents:
     enabled: true
     priority: high
     timeout: 300  # seconds
-  
+
   core-developer:
     enabled: true
     priority: normal
     timeout: 600
-  
+
   storage-specialist:
     enabled: true
     priority: normal
     timeout: 600
-  
+
   framework-integrator:
     enabled: true
     priority: normal
     timeout: 300
-  
+
   test-engineer:
     enabled: true
     priority: high
     timeout: 900
-  
+
   devops-engineer:
     enabled: true
     priority: low
     timeout: 300
-  
+
   documentation-writer:
     enabled: true
     priority: normal
     timeout: 300
-  
+
   code-reviewer:
     enabled: true
     priority: high
@@ -273,11 +333,11 @@ agents:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-04-22 | Initial agent system design |
+| 1.1.0 | 2026-04-30 | Updated for monorepo structure, Biome, turborepo, Changesets |
 
 ---
 
 ## References
 
-- [DEV_PLAN.md](./DEV_PLAN.md) - Development plan
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture
 - [skills/](./skills/) - Agent skill definitions

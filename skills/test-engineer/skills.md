@@ -32,15 +32,14 @@ Comprehensive testing strategy implementation including unit, integration, and E
 ## Tools
 
 ### Testing Frameworks
-- **Vitest** - Fast unit test framework
-- **@vitest/coverage-v8** - Code coverage analysis
-- **supertest** - HTTP assertion library
-- **Testcontainers** - Real database testing
+- **Vitest 3** - Fast unit test framework (co-located `*.test.ts`)
+- **@vitest/coverage-v8** - Code coverage analysis (per-package thresholds: 90/85/90/90)
+- **supertest** - HTTP assertion library for Express/Koa E2E tests
+- **Turborepo** - Orchestrates `turbo run test` across all packages
 
 ### Mocking Tools
-- **vitest-mock-extended** - TypeScript mocks
-- **Mock implementations** - Custom mock adapters
-- **In-memory adapter** - For fast testing
+- **Vitest mocks** - Built-in `vi.fn()` and `vi.mock()`
+- **In-memory adapter** - For fast testing without external dependencies
 
 ## Constraints
 
@@ -390,10 +389,10 @@ describe('Express Middleware E2E', () => {
 4. Create test plan
 
 ### Test Development Phase
-1. Write unit tests for each component
-2. Create integration tests
-3. Develop E2E test scenarios
-4. Set up test environments
+1. Write unit tests co-located with source (`src/*.test.ts`)
+2. Create integration tests per package
+3. Develop E2E test scenarios for framework packages
+4. Maintain >90% line coverage and >85% branch coverage per package
 
 ### Test Execution Phase
 1. Run unit tests

@@ -709,11 +709,12 @@ export function createFrameworkAdapter<Request, Response, Context>(
 4. Create integration plan
 
 ### Implementation Phase
-1. Set up framework-specific middleware
-2. Handle framework lifecycle properly
-3. Integrate error handling
-4. Add type definitions
-5. Optimize for performance
+1. Implement in `packages/{express,koa}/src/index.ts`
+2. Import core types from `@reaatech/idempotency-middleware`
+3. Handle framework lifecycle properly
+4. Integrate error handling
+5. Add type definitions per framework
+6. Optimize for performance
 
 ### Testing Phase
 1. Write unit tests for each integration
