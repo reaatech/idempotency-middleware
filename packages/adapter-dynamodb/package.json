@@ -1,0 +1,52 @@
+{
+  "name": "@reaatech/idempotency-middleware-adapter-dynamodb",
+  "version": "1.0.0",
+  "description": "DynamoDB storage adapter for @reaatech/idempotency-middleware",
+  "license": "MIT",
+  "author": "Rick Somers <rick@reaatech.com> (https://reaatech.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reaatech/idempotency-middleware.git",
+    "directory": "packages/adapter-dynamodb"
+  },
+  "homepage": "https://github.com/reaatech/idempotency-middleware/tree/main/packages/adapter-dynamodb#readme",
+  "bugs": {
+    "url": "https://github.com/reaatech/idempotency-middleware/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.50.0",
+    "@aws-sdk/lib-dynamodb": "^3.50.0",
+    "@aws-sdk/util-dynamodb": "^3.50.0",
+    "@reaatech/idempotency-middleware": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@reaatech/idempotency-middleware-example-express-memory",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Express example using in-memory adapter",
+  "license": "MIT",
+  "author": "Rick Somers <rick@reaatech.com> (https://reaatech.com)",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@reaatech/idempotency-middleware": "workspace:*",
+    "@reaatech/idempotency-middleware-express": "workspace:*",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "typescript": "^5.8.3"
+  }
+}

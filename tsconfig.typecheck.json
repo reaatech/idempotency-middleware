@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@reaatech/idempotency-middleware": ["./packages/core/src/index.ts"],
+      "@reaatech/idempotency-middleware-adapter-redis": ["./packages/adapter-redis/src/index.ts"],
+      "@reaatech/idempotency-middleware-adapter-dynamodb": ["./packages/adapter-dynamodb/src/index.ts"],
+      "@reaatech/idempotency-middleware-adapter-firestore": ["./packages/adapter-firestore/src/index.ts"],
+      "@reaatech/idempotency-middleware-express": ["./packages/express/src/index.ts"],
+      "@reaatech/idempotency-middleware-koa": ["./packages/koa/src/index.ts"]
+    }
+  }
+}

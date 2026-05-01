@@ -1,0 +1,56 @@
+{
+  "name": "@reaatech/idempotency-middleware",
+  "version": "1.0.0",
+  "description": "Framework-agnostic idempotency cache middleware for TypeScript applications",
+  "license": "MIT",
+  "author": "Rick Somers <rick@reaatech.com> (https://reaatech.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reaatech/idempotency-middleware.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/reaatech/idempotency-middleware/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/reaatech/idempotency-middleware/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "idempotency",
+    "middleware",
+    "cache",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}
