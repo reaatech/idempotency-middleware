@@ -5,7 +5,7 @@
   "description": "Framework-agnostic idempotency cache middleware for TypeScript applications",
   "type": "module",
   "scripts": {
-    "build": "turbo run build",
+    "build": "pnpm install && turbo run build",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "lint": "biome check .",
