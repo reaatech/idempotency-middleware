@@ -1,5 +1,5 @@
-import type { StorageAdapter } from './StorageAdapter.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
+import type { StorageAdapter } from './StorageAdapter.js';
 import type { IdempotencyRecord } from './types.js';
 
 interface CacheEntry {

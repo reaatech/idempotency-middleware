@@ -1,6 +1,6 @@
-import type { StorageAdapter } from './StorageAdapter.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
 import { extractVaryHeaders, generateCacheKey, hashBody } from './hash.js';
+import type { StorageAdapter } from './StorageAdapter.js';
 import { deserializeResponse, serializeResponse } from './serialize.js';
 import type { IdempotencyConfig } from './types.js';
 

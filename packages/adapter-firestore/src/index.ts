@@ -1,6 +1,6 @@
 import type { CollectionReference, Firestore } from '@google-cloud/firestore';
-import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 
 const LOCK_EXISTS_MARKER = '__idempotency_lock_held__';
 

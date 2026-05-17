@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryAdapter } from './MemoryAdapter.js';
-import type { StorageAdapter } from './StorageAdapter.js';
 import { IdempotencyError } from './errors.js';
+import { MemoryAdapter } from './MemoryAdapter.js';
 import { IdempotencyMiddleware } from './middleware.js';
+import type { StorageAdapter } from './StorageAdapter.js';
 
 describe('IdempotencyMiddleware', () => {
   let storage: StorageAdapter;

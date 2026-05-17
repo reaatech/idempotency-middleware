@@ -40,7 +40,10 @@
   },
   "homepage": "https://github.com/reaatech/idempotency-middleware#readme",
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild"
+    ]
   },
   "engines": {
     "node": ">=18",
