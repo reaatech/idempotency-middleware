@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@reaatech/idempotency-middleware": ["./packages/core/src/index.ts"],
       "@reaatech/idempotency-middleware-adapter-redis": ["./packages/adapter-redis/src/index.ts"],
