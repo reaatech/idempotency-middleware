@@ -38,7 +38,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@google-cloud/firestore": "^7.0.0",
+    "@google-cloud/firestore": "^8.5.0",
     "@reaatech/idempotency-middleware": "workspace:*"
   },
   "devDependencies": {
