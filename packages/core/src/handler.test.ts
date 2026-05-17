@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MemoryAdapter } from './MemoryAdapter.js';
 import { IdempotencyError, IdempotencyErrorCode } from './errors.js';
 import { createHandlerContext, idempotentHandler } from './handler.js';
+import { MemoryAdapter } from './MemoryAdapter.js';
 
 describe('idempotentHandler', () => {
   let adapter: MemoryAdapter;

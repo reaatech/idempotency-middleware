@@ -3,8 +3,8 @@ import {
   IdempotencyErrorCode,
   MemoryAdapter,
 } from '@reaatech/idempotency-middleware';
-import Koa from 'koa';
 import type { Context } from 'koa';
+import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import request from 'supertest';
 import { beforeAll, describe, expect, it } from 'vitest';

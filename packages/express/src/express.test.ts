@@ -234,9 +234,9 @@ describe('Express Middleware E2E', () => {
     const failApp = express();
     failApp.use(express.json());
 
-    let setCallCount = 0;
+    let _setCallCount = 0;
     failAdapter.set = async () => {
-      setCallCount++;
+      _setCallCount++;
       throw new Error('Set failed');
     };
 

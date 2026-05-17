@@ -5,8 +5,8 @@ import {
   PutItemCommand,
 } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
-import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 
 export class DynamoDBAdapter implements StorageAdapter {
   private client: DynamoDBClient;

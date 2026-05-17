@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 import type { IdempotencyRecord, StorageAdapter } from '@reaatech/idempotency-middleware';
+import { IdempotencyError, IdempotencyErrorCode } from '@reaatech/idempotency-middleware';
 import type { Redis } from 'ioredis';
 
 const RELEASE_LOCK_LUA = `
