@@ -14,7 +14,7 @@
     "@reaatech/idempotency-middleware-adapter-redis": "workspace:*",
     "@reaatech/idempotency-middleware-koa": "workspace:*",
     "ioredis": "^5.3.0",
-    "koa": "^3.2.0",
+    "koa": "^3.2.1",
     "koa-bodyparser": "^4.4.1"
   },
   "devDependencies": {
