@@ -39,13 +39,10 @@ export class IdempotencyError extends Error {
     this.context = options?.context;
 
     if (typeof (Error as { captureStackTrace?: unknown }).captureStackTrace === 'function') {
-      type CaptureStackTrace = (
-        target: object,
-        ctor?: { new (..._args: never[]): unknown },
-      ) => void;
+      type CaptureStackTrace = (target: object, ctor?: { new (..._args: never[]): object }) => void;
       (Error as unknown as { captureStackTrace: CaptureStackTrace }).captureStackTrace(
         this,
-        IdempotencyError as unknown as { new (..._args: never[]): unknown },
+        IdempotencyError as unknown as { new (..._args: never[]): object },
       );
     }
   }

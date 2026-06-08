@@ -140,7 +140,6 @@ describe('IdempotencyMiddleware', () => {
     const result = await customMiddleware.execute('no-cache-key', {}, handler);
     expect(result).toEqual(handlerResponse);
 
-    await storage.get(expect.stringContaining('no-cache-key') as unknown as string);
     const handler2 = vi.fn().mockResolvedValue({ data: 'different' });
     const result2 = await customMiddleware.execute('no-cache-key', {}, handler2);
     expect(result2).toEqual({ data: 'different' });
