@@ -1,6 +1,6 @@
 {
   "name": "@reaatech/idempotency-middleware-adapter-dynamodb",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DynamoDB storage adapter for @reaatech/idempotency-middleware",
   "license": "MIT",
   "author": "Rick Somers <rick@reaatech.com> (https://reaatech.com)",
