@@ -40,9 +40,9 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1064.0",
-    "@aws-sdk/lib-dynamodb": "^3.1064.0",
-    "@aws-sdk/util-dynamodb": "^3.996.4",
+    "@aws-sdk/client-dynamodb": "^3.1069.0",
+    "@aws-sdk/lib-dynamodb": "^3.1069.0",
+    "@aws-sdk/util-dynamodb": "^3.996.5",
     "@reaatech/idempotency-middleware": "workspace:*"
   },
   "devDependencies": {
