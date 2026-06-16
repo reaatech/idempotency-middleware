@@ -502,7 +502,19 @@ describe('Express Middleware E2E', () => {
     aborter.abort();
     await fetchPromise;
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // Wait for the close event to propagate and release the lock
+    // Use a longer timeout on slow CI runners
+    await new Promise<void>((resolve) => {
+      const check = (): void => {
+        if (releaseCount > 0) {
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      setTimeout(check, 100);
+      setTimeout(resolve, 2000);
+    });
     server.close();
 
     expect(releaseCount).toBeGreaterThan(0);
