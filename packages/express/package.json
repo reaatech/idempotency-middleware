@@ -43,7 +43,7 @@
     "@reaatech/idempotency-middleware": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/express": "^5.0.6",
     "@types/supertest": "^7.2.0",
     "express": "^5.2.1",
