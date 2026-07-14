@@ -46,7 +46,7 @@
     "@types/node": "^26.0.1",
     "@types/koa": "^3.0.3",
     "@types/koa-bodyparser": "^4.3.13",
-    "@types/supertest": "^7.2.0",
+    "@types/supertest": "^7.2.1",
     "koa": "^3.2.1",
     "koa-bodyparser": "^4.4.1",
     "supertest": "^7.2.2",
