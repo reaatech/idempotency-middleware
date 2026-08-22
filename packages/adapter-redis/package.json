@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@reaatech/idempotency-middleware": "workspace:*",
-    "ioredis": "^5.3.0"
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.0.1",
