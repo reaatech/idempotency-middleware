@@ -29,9 +29,7 @@ describe('serializeResponse / deserializeResponse', () => {
   });
 
   it('preserves custom enumerable properties on errors', () => {
-    const original = new Error('paid');
-    (original as unknown as { code: string; status: number }).code = 'PAID';
-    (original as unknown as { code: string; status: number }).status = 422;
+    const original = Object.assign(new Error('paid'), { code: 'PAID', status: 422 });
 
     const json = JSON.parse(JSON.stringify(serializeResponse(original))) as unknown;
     const reconstructed = deserializeResponse(json) as Error & {
